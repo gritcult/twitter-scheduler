@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Scheduler</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #1da1f2;
+        }
+
+        .char-count {
+            text-align: right;
+            margin-top: 5px;
+            color: #657786;
+            font-size: 0.9em;
+        }
+
+        .char-count.warning {
+            color: #ff6b6b;
+        }
+
+        input[type="datetime-local"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="datetime-local"]:focus {
+            outline: none;
+            border-color: #1da1f2;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-schedule {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-schedule:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-post-now {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            color: white;
+        }
+
+        .btn-post-now:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(29, 161, 242, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .tweets-section {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 2px solid #e1e8ed;
+        }
+
+        .tweets-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .tweet-item {
+            background: #f7f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #1da1f2;
+        }
+
+        .tweet-item.posted {
+            border-left-color: #17bf63;
+            opacity: 0.8;
+        }
+
+        .tweet-content {
+            margin-bottom: 10px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .tweet-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #657786;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-scheduled {
+            background: #e1f5ff;
+            color: #1da1f2;
+        }
+
+        .status-posted {
+            background: #d4edda;
+            color: #17bf63;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #657786;
+        }
+
+        .image-upload {
+            margin-top: 10px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed #e1e8ed;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        input[type="file"]:hover {
+            border-color: #1da1f2;
+        }
+
+        .image-preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .image-preview {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e1e8ed;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .image-preview .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .image-preview .remove-btn:hover {
+            background: rgba(255, 107, 107, 1);
+        }
+
+        .tweet-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .tweet-images img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e1e8ed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐦 Twitter Scheduler</h1>
+            <p>Schedule and post tweets easily</p>
+        </div>
+
+        <div class="content">
+            <div id="message" class="message"></div>
+
+            <form id="tweetForm">
+                <div class="form-group">
+                    <label for="content">Tweet Content</label>
+                    <textarea id="content" name="content" placeholder="What's happening?" maxlength="280" required></textarea>
+                    <div class="char-count" id="charCount">0 / 280</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="images">Images (up to 4)</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="images" name="images[]" accept="image/*" multiple>
+                    </div>
+                    <div class="image-preview-container" id="imagePreview"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="scheduled_time">Schedule Time (optional for posting now)</label>
+                    <input type="datetime-local" id="scheduled_time" name="scheduled_time">
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn-schedule">📅 Schedule Tweet</button>
+                    <button type="button" class="btn-post-now" id="postNowBtn">🚀 Post Now</button>
+                </div>
+            </form>
+
+            <div class="tweets-section">
+                <h2>Scheduled Tweets</h2>
+                <div id="tweetsList" class="loading">Loading tweets...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const contentTextarea = document.getElementById('content');
+        const charCount = document.getElementById('charCount');
+        const tweetForm = document.getElementById('tweetForm');
+        const postNowBtn = document.getElementById('postNowBtn');
+        const messageDiv = document.getElementById('message');
+        const tweetsList = document.getElementById('tweetsList');
+        const imagesInput = document.getElementById('images');
+        const imagePreview = document.getElementById('imagePreview');
+        let selectedImages = [];
+
+        // Character counter
+        contentTextarea.addEventListener('input', () => {
+            const count = contentTextarea.value.length;
+            charCount.textContent = `${count} / 280`;
+            charCount.classList.toggle('warning', count > 250);
+        });
+
+        // Show message
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Load tweets
+        async function loadTweets() {
+            try {
+                const response = await fetch('/api/tweets');
+                const tweets = await response.json();
+                
+                if (tweets.length === 0) {
+                    tweetsList.innerHTML = '<p style="text-align: center; color: #657786;">No scheduled tweets yet.</p>';
+                    return;
+                }
+
+                tweetsList.innerHTML = tweets.map(tweet => {
+                    let imagesHtml = '';
+                    if (tweet.image_paths && tweet.image_paths.length > 0) {
+                        const imageUrls = tweet.image_paths.map(filename => `/uploads/${filename}`);
+                        imagesHtml = `<div class="tweet-images">${imageUrls.map(url => 
+                            `<img src="${url}" alt="Tweet image" onerror="this.style.display='none'">`
+                        ).join('')}</div>`;
+                    }
+                    
+                    return `
+                        <div class="tweet-item ${tweet.posted ? 'posted' : ''}">
+                            <div class="tweet-content">${escapeHtml(tweet.content)}</div>
+                            ${imagesHtml}
+                            <div class="tweet-meta">
+                                <span>Scheduled: ${formatDateTime(tweet.scheduled_time)}</span>
+                                <span class="status-badge ${tweet.posted ? 'status-posted' : 'status-scheduled'}">
+                                    ${tweet.posted ? '✓ Posted' : '⏰ Scheduled'}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                tweetsList.innerHTML = '<p style="text-align: center; color: #ff6b6b;">Error loading tweets.</p>';
+                console.error('Error loading tweets:', error);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString();
+        }
+
+        // Image preview handling
+        function updateImagePreview() {
+            imagePreview.innerHTML = '';
+            selectedImages.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = 'image-preview';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <button type="button" class="remove-btn" onclick="removeImage(${index})">×</button>
+                    `;
+                    imagePreview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function removeImage(index) {
+            selectedImages.splice(index, 1);
+            updateImagePreview();
+            updateFileInput();
+        }
+
+        function updateFileInput() {
+            const dt = new DataTransfer();
+            selectedImages.forEach(file => dt.items.add(file));
+            imagesInput.files = dt.files;
+        }
+
+        imagesInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            const remainingSlots = 4 - selectedImages.length;
+            
+            if (files.length > remainingSlots) {
+                showMessage(`You can only add ${remainingSlots} more image(s). Maximum 4 images allowed.`, 'error');
+                files.splice(remainingSlots);
+            }
+            
+            selectedImages = [...selectedImages, ...files];
+            updateImagePreview();
+        });
+
+        // Schedule tweet
+        tweetForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const content = contentTextarea.value.trim();
+            const scheduledTime = document.getElementById('scheduled_time').value;
+
+            if (!content) {
+                showMessage('Please enter tweet content', 'error');
+                return;
+            }
+
+            if (!scheduledTime) {
+                showMessage('Please select a scheduled time', 'error');
+                return;
+            }
+
+            if (selectedImages.length > 4) {
+                showMessage('Maximum 4 images allowed', 'error');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('content', content);
+                formData.append('scheduled_time', new Date(scheduledTime).toISOString());
+                
+                selectedImages.forEach((file) => {
+                    formData.append('images[]', file);
+                });
+
+                const response = await fetch('/api/schedule', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('Tweet scheduled successfully!', 'success');
+                    contentTextarea.value = '';
+                    document.getElementById('scheduled_time').value = '';
+                    charCount.textContent = '0 / 280';
+                    selectedImages = [];
+                    imagePreview.innerHTML = '';
+                    imagesInput.value = '';
+                    loadTweets();
+                } else {
+                    showMessage(data.error || 'Error scheduling tweet', 'error');
+                }
+            } catch (error) {
+                showMessage('Error scheduling tweet', 'error');
+                console.error('Error:', error);
+            }
+        });
+
+        // Post now
+        postNowBtn.addEventListener('click', async () => {
+            const content = contentTextarea.value.trim();
+
+            if (!content) {
+                showMessage('Please enter tweet content', 'error');
+                return;
+            }
+
+            if (content.length > 280) {
+                showMessage('Tweet content exceeds 280 characters', 'error');
+                return;
+            }
+
+            if (selectedImages.length > 4) {
+                showMessage('Maximum 4 images allowed', 'error');
+                return;
+            }
+
+            postNowBtn.disabled = true;
+            postNowBtn.textContent = 'Posting...';
+
+            try {
+                const formData = new FormData();
+                formData.append('content', content);
+                
+                selectedImages.forEach((file) => {
+                    formData.append('images[]', file);
+                });
+
+                const response = await fetch('/api/post-now', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('Tweet posted successfully!', 'success');
+                    contentTextarea.value = '';
+                    charCount.textContent = '0 / 280';
+                    selectedImages = [];
+                    imagePreview.innerHTML = '';
+                    imagesInput.value = '';
+                    loadTweets();
+                } else {
+                    showMessage(data.error || 'Error posting tweet', 'error');
+                }
+            } catch (error) {
+                showMessage('Error posting tweet', 'error');
+                console.error('Error:', error);
+            } finally {
+                postNowBtn.disabled = false;
+                postNowBtn.textContent = '🚀 Post Now';
+            }
+        });
+
+        // Load tweets on page load
+        loadTweets();
+        setInterval(loadTweets, 30000); // Refresh every 30 seconds
+    </script>
+</body>
+</html>
+
